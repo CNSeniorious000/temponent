@@ -46,7 +46,7 @@ class TempliteTest(unittest.TestCase):
         A context manager, and the message should be `msg`.
 
         """
-        pat = "^" + re.escape(f"{msg}: {thing!r}") + "$"
+        pat = f'^{re.escape(f"{msg}: {thing!r}")}$'
         return self.assertRaisesRegex(TemplateSyntaxError, pat)
 
     def test_passthrough(self):
