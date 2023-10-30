@@ -198,7 +198,7 @@ class Template:
                         if start_what != end_what:
                             raise TemplateSyntaxError("Mismatched end tag", end_what)
 
-                        if end_what == "for" or end_what == "if":
+                        if end_what in ["for", "if"]:
                             code.dedent()
                         else:
                             buffered.append(f"next(c_{end_what}_renderer)")
@@ -235,11 +235,10 @@ class Template:
         return code
 
     def extract_context_to_code(self, code: CodeBuilder):
-        if self.strict:
-            for var in self.vars_need:
+        for var in self.vars_need:
+            if self.strict:
                 code.add_line(f"c_{var} = context[{var!r}]")
-        else:
-            for var in self.vars_need:
+            else:
                 code.add_line(f"c_{var} = context.get({var!r})")
 
     def _expr_code(self, expr):
@@ -290,11 +289,12 @@ class Template:
         if not self.strict:
             return self.render_function(render_context, self._do_dots, self.load_template)
 
+        if missing_vars := tuple(
+            v for v in self.vars_need if v not in render_context.keys()
+        ):
+            raise TemplateContextError(f"Missing context: {', '.join(missing_vars)}")
         # static namespace checking
         render_function = self.render_function
-        missing_vars = tuple(v for v in self.vars_need if v not in render_context.keys())
-        if missing_vars:
-            raise TemplateContextError(f"Missing context: {', '.join(missing_vars)}")
         # noinspection PyCallingNonCallable
         return render_function(render_context, self._do_dots, self.load_template)
 
